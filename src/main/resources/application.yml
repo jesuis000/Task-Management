@@ -35,7 +35,7 @@ spring:
 jwt:
   access:
     token:
-      expiration: 60000000
+      expiration: 900000
   refresh:
     token:
-      expiration: 60000000000
+      expiration: 604800000
