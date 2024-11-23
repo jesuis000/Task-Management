@@ -1,0 +1,47 @@
+# Project ERD
+
+```mermaid
+erDiagram
+    USERS ||--o{ TASKS : "creates/assigns"
+    USERS ||--o{ NOTIFICATIONS : "receives"
+    USERS ||--o{ TASK_HISTORY : "modifies"
+    
+    TASKS ||--o{ TASK_HISTORY : "has"
+    TASKS ||--o{ NOTIFICATIONS : "triggers"
+
+    USERS {
+        Long id PK
+        String userName
+        String passWord
+        UserRole userRole
+        Date createdAt
+    }
+
+    TASKS {
+        Long id PK
+        String title
+        String description
+        TaskStatus status
+        TaskPriority priority
+        LocalDateTime dueData
+        LocalDateTime created_at
+        LocalDateTime updated_at
+    }
+
+    TASK_HISTORY {
+        Long id PK
+        Long task_id FK
+        Long modified_by FK
+        LocalDateTime modifiedAt
+        String previousStatus
+        String newStatus
+    }
+
+    NOTIFICATIONS {
+        Long id PK
+        Long user_id FK
+        Long task_id FK
+        String message
+        boolean isRead
+        LocalDateTime createdAt
+    }
