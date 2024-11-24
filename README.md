@@ -26,7 +26,7 @@ between:
 git clone https://github.com/jesuis000/Task-Management.git
 cd task-management
 ```
-
+1.1 create .env file demonstrating :JWT_SECRET variable
 2. Build the application:
 
 ```bash
