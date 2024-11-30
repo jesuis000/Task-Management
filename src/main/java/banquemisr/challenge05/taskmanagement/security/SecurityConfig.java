@@ -1,7 +1,11 @@
 package banquemisr.challenge05.taskmanagement.security;
 
+import banquemisr.challenge05.taskmanagement.exception.ErrorResponse;
 import banquemisr.challenge05.taskmanagement.security.jwt.JwtFilter;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.MalformedJwtException;
+import io.jsonwebtoken.security.SignatureException;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,6 +17,7 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
@@ -33,6 +38,36 @@ public class SecurityConfig {
     }
 
     @Bean
+    public AuthenticationEntryPoint customauthenticationEntryPoint() {
+        return (request, response, authException) -> {
+            String errorMessage = "Authentication Failed";
+
+            Throwable jwtException = (Throwable) request.getAttribute("jwt_exception");
+
+            if (jwtException instanceof MalformedJwtException) {
+                errorMessage = "Malformed JWT Token";
+            } else if (jwtException instanceof SignatureException) {
+                errorMessage = "Invalid JWT Signature";
+
+            } else if (jwtException instanceof ExpiredJwtException) {
+                errorMessage = "Expired JWT";
+            }
+
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType("application/json");
+
+            ErrorResponse errorResponse = new ErrorResponse(
+                    errorMessage,
+                    HttpServletResponse.SC_UNAUTHORIZED,
+                    new HashMap<>()
+            );
+
+            ObjectMapper objectMapper = new ObjectMapper();
+            response.getWriter().write(objectMapper.writeValueAsString(errorResponse));
+        };
+    }
+
+    @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity
                 .csrf(AbstractHttpConfigurer::disable)
@@ -40,22 +75,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
                 .exceptionHandling(ex -> ex
-                        .authenticationEntryPoint((request, response, authException) -> {
-                                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                                    response.setContentType("application/json");
-
-                                    Map<String, String> errorResponse = new HashMap<>();
-
-                                    errorResponse.put("timestamp", LocalDateTime.now().toString());
-                                    errorResponse.put("status", String.valueOf(HttpServletResponse.SC_UNAUTHORIZED));
-                                    errorResponse.put("error", "Unauthorized");
-                                    errorResponse.put("message", "Authentication failed: " + authException.getMessage());
-                                    errorResponse.put("path", request.getRequestURI());
-
-                                    ObjectMapper objectMapper = new ObjectMapper();
-                                    response.getWriter().write(objectMapper.writeValueAsString(errorResponse));
-                                }
-                        )
+                        .authenticationEntryPoint(customauthenticationEntryPoint())
                 )
                 .authorizeHttpRequests(
                         requests -> requests

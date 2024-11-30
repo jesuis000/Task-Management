@@ -12,6 +12,8 @@ import banquemisr.challenge05.taskmanagement.services.TaskService;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -34,6 +36,7 @@ public class TaskController {
     }
 
     @GetMapping("/")
+    @Cacheable(value = "tasks")
     List<GetTaskDTO> getTasks(Authentication authentication) {
 
         // current user name from spring security (Authentication)
@@ -58,6 +61,7 @@ public class TaskController {
     }
 
     @PutMapping("/{taskId}")
+    @CachePut(value = "tasks")
     public ResponseEntity<UpdateTaskDTO> updateTask(@PathVariable Long taskId, @Valid @RequestBody UpdateTaskDTO updateTaskDTO, Authentication authentication) {
 
         UserModel userModel = userRepository.findByUserName(authentication.getName());

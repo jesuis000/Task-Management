@@ -1,10 +1,14 @@
 package banquemisr.challenge05.taskmanagement.security.jwt;
 
 
+import banquemisr.challenge05.taskmanagement.exception.ErrorResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.MalformedJwtException;
+import io.jsonwebtoken.security.SignatureException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -50,13 +54,9 @@ public class JwtFilter extends OncePerRequestFilter {
                 userName = jwtUtil.extractUserName(token);
 
             }
-        } catch (ExpiredJwtException e) {
-            try {
-                handleExpiredToken(response);
-            } catch (Exception ex) {
-                throw new RuntimeException(ex);
-            }
-            return;
+        } catch (ExpiredJwtException | MalformedJwtException | SignatureException e) {
+            // update request object for customAuthenticationEntryPoint to checks and handle
+            request.setAttribute("jwt_exception", e);
         }
 
 
@@ -85,11 +85,6 @@ public class JwtFilter extends OncePerRequestFilter {
 
     }
 
-    private void handleExpiredToken(HttpServletResponse response) throws Exception {
-        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-        response.setContentType("application/json");
-        response.getWriter().write(createErrorResponse("Jwt Token has expired!"));
-    }
 
     private String createErrorResponse(String message) {
         try {

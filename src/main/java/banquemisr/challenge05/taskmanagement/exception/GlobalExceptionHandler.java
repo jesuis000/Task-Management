@@ -1,5 +1,6 @@
 package banquemisr.challenge05.taskmanagement.exception;
 
+import io.jsonwebtoken.security.SignatureException;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.ResponseEntity;
@@ -49,4 +50,3 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN).body(new ErrorResponse("Task not found", HttpServletResponse.SC_NOT_FOUND, new HashMap<>()));
     }
 }
-

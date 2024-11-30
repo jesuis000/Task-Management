@@ -32,6 +32,10 @@ spring:
     livereload:
       enabled: true
 
+cache:
+  type:
+    simple
+
 jwt:
   access:
     token:
