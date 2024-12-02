@@ -12,8 +12,11 @@ import banquemisr.challenge05.taskmanagement.services.TaskService;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -36,15 +39,27 @@ public class TaskController {
     }
 
     @GetMapping("/")
-    @Cacheable(value = "tasks")
-    List<GetTaskDTO> getTasks(Authentication authentication) {
+    List<GetTaskDTO> getTasks(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            Authentication authentication
+    ) {
+        // Log the incoming request details
+        logger.info("Received request to fetch tasks - Page: {}, Size: {}, User: {}",
+                page, size, authentication.getName());
+
+        Pageable pageable = PageRequest.of(page, size);
 
         // current user name from spring security (Authentication)
         UserModel userModel = userRepository.findByUserName(authentication.getName());
 
 
         // current user assigned tasks , mapped to taskDTO
-        return taskRepository.findByassignee(userModel).stream().map(GetTaskDTO::fromTaskModel).toList();
+        return taskRepository
+                .findByassignee(userModel, pageable)
+                .stream()
+                .map(GetTaskDTO::fromTaskModel)
+                .toList();
 
     }
 
@@ -61,7 +76,6 @@ public class TaskController {
     }
 
     @PutMapping("/{taskId}")
-    @CachePut(value = "tasks")
     public ResponseEntity<UpdateTaskDTO> updateTask(@PathVariable Long taskId, @Valid @RequestBody UpdateTaskDTO updateTaskDTO, Authentication authentication) {
 
         UserModel userModel = userRepository.findByUserName(authentication.getName());

@@ -7,9 +7,12 @@ import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.security.SignatureException;
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.InsufficientAuthenticationException;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -30,6 +33,7 @@ import java.util.Map;
 public class SecurityConfig {
     private final CustomUserDetailsService customUserDetailsService;
     private final JwtFilter jwtFilter;
+    private final Logger logger = LoggerFactory.getLogger(SecurityConfig.class);
 
     SecurityConfig(CustomUserDetailsService customUserDetailsService, JwtFilter jwtFilter) {
 
@@ -51,6 +55,10 @@ public class SecurityConfig {
 
             } else if (jwtException instanceof ExpiredJwtException) {
                 errorMessage = "Expired JWT";
+            } else if (jwtException instanceof InsufficientAuthenticationException) {
+                errorMessage = "insufficient authentication";   // cases example : missed/extra slash '/' , also not available resource on app
+            } else {
+                logger.warn("EXCEPTION TO HANDLE -> :", authException);
             }
 
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
